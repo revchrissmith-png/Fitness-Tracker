@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import { createClient } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
-import { Activity, Send, Beef, Trophy, Calendar, CheckCircle, XCircle } from 'lucide-react';
+import { Activity, Send, Beef, Trophy, Calendar, CheckCircle, ChevronRight } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -41,45 +41,4 @@ export default function App() {
     if (act && act.length > 0 && !selectedActivityId) setSelectedActivityId(act[0].id);
   }
 
-  const getDailyTotal = (userName, activityId, dateOffset = 0) => {
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() - dateOffset);
-    const dateString = targetDate.toDateString();
-    
-    return logs
-      .filter(l => 
-        l.user_name === userName && 
-        l.activity_id === activityId &&
-        new Date(l.created_at).toDateString() === dateString
-      )
-      .reduce((sum, current) => sum + Number(current.value), 0);
-  };
-
-  const getLeaderboard = () => {
-    const users = [...new Set(logs.map(l => l.user_name))];
-    return users.map(user => {
-      let goalsMet = 0;
-      activities.forEach(act => {
-        if (getDailyTotal(user, act.id) >= act.daily_goal) goalsMet++;
-      });
-      return { user, score: goalsMet };
-    }).sort((a, b) => b.score - a.score);
-  };
-
-  async function handleLog(e) {
-    e.preventDefault();
-    if (!name) { alert("Enter your name!"); return; }
-    await supabase.from('logs').insert([{ 
-      activity_id: selectedActivityId, 
-      user_name: name, 
-      value: sliderValue 
-    }]);
-    setSliderValue(10);
-  }
-
-  const proteinAct = activities.find(a => a.name === 'Protein');
-  const proteinTotal = proteinAct ? getDailyTotal(name, proteinAct.id) : 0;
-  const proteinGoal = proteinAct?.daily_goal || 100;
-
-  return (
-    <div style={{ maxWidth: '400px', margin: '0 auto', padding: '20px', fontFamily: 'system-ui', background: '#f8fafc', minHeight: '1
+  const getDailyTotal = (userName, activityId

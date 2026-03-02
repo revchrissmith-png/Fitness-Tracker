@@ -1,3 +1,4 @@
+import Head from 'next/head';
 import { createClient } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 import { Activity, Send, Beef, Trophy, Medal } from 'lucide-react';
@@ -13,6 +14,8 @@ export default function App() {
   const [name, setName] = useState('');
   const [sliderValue, setSliderValue] = useState(10);
   const [selectedActivityId, setSelectedActivityId] = useState('');
+
+  const iconUrl = "https://i.imgur.com/udcNtk8.png";
 
   useEffect(() => {
     const savedName = localStorage.getItem('fitness-name');
@@ -48,7 +51,6 @@ export default function App() {
       .reduce((sum, current) => sum + Number(current.value), 0);
   };
 
-  // Calculate scores for the leaderboard (how many goals hit 100% today)
   const getLeaderboard = () => {
     const users = [...new Set(logs.map(l => l.user_name))];
     return users.map(user => {
@@ -77,6 +79,16 @@ export default function App() {
 
   return (
     <div style={{ maxWidth: '400px', margin: '0 auto', padding: '20px', fontFamily: 'system-ui', background: '#f8fafc', minHeight: '100vh' }}>
+      <Head>
+        <title>Team Fitness</title>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Team Fitness" />
+        <link rel="apple-touch-icon" href={iconUrl} />
+        <link rel="icon" href={iconUrl} />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
+      </Head>
+
       <header style={{ marginBottom: '20px', textAlign: 'center' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '24px', color: '#1e293b' }}>
           <Activity color="#3b82f6" /> Team Fitness
@@ -89,9 +101,66 @@ export default function App() {
         />
       </header>
 
-      {/* PROTEIN HIGHLIGHT */}
+      {/* PROTEIN CARD */}
       <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', padding: '20px', borderRadius: '24px', color: 'white', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: '12px', opacity: 0.8, fontWeight: 'bold' }}>DAILY PROTEIN</div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{proteinTotal}g <span style={{ fontSize: '16px', opacity: 0.6 }}>/
+            <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{proteinTotal}g <span style={{ fontSize: '16px', opacity: 0.6 }}>/ {proteinGoal}g</span></div>
+          </div>
+          <Beef size={32} />
+        </div>
+      </div>
+
+      {/* SLIDER LOGGER */}
+      <form onSubmit={handleLog} style={{ background: 'white', padding: '20px', borderRadius: '24px', marginBottom: '30px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
+        <select 
+          value={selectedActivityId}
+          onChange={(e) => setSelectedActivityId(e.target.value)}
+          style={{ width: '100%', padding: '12px', marginBottom: '15px', borderRadius: '10px', border: '1px solid #eee' }}
+        >
+          {activities.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+        </select>
+        <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+          <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#3b82f6' }}>{sliderValue}</div>
+        </div>
+        <input type="range" min="1" max="100" value={sliderValue} onChange={(e) => setSliderValue(parseInt(e.target.value))} style={{ width: '100%', marginBottom: '20px' }} />
+        <button type="submit" style={{ width: '100%', background: '#3b82f6', color: 'white', border: 'none', padding: '16px', borderRadius: '12px', fontWeight: 'bold' }}>Log Entry</button>
+      </form>
+
+      {/* LEADERBOARD */}
+      <section style={{ marginBottom: '30px' }}>
+        <h3 style={{ fontSize: '12px', color: '#64748b', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+          <Trophy size={14} color="#f59e0b" /> LEADERBOARD
+        </h3>
+        <div style={{ background: '#fffbeb', padding: '15px', borderRadius: '20px', border: '1px solid #fef3c7' }}>
+          {getLeaderboard().map((entry, i) => (
+            <div key={entry.user} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+              <span>{i === 0 ? '👑' : '🥈'} {entry.user}</span>
+              <span style={{ fontWeight: 'bold' }}>{entry.score} Goals Met</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* MOVEMENT LIST */}
+      <section>
+        {activities.filter(a => a.name !== 'Protein').map(act => {
+          const myTotal = getDailyTotal(name, act.id);
+          const pct = Math.min((myTotal / act.daily_goal) * 100, 100);
+          return (
+            <div key={act.id} style={{ background: 'white', padding: '15px', borderRadius: '16px', marginBottom: '10px', border: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '14px' }}>
+                <strong>{act.name}</strong>
+                <span>{myTotal}/{act.daily_goal}</span>
+              </div>
+              <div style={{ height: '6px', background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? '#22c55e' : '#3b82f6', transition: 'width 0.5s ease' }} />
+              </div>
+            </div>
+          );
+        })}
+      </section>
+    </div>
+  );
+}
